@@ -39,11 +39,11 @@ p = max(df.userId)
 q = max(df.MovieId)
 a = np.zeros([p, q])
 b = len(m)
-theta = np.random.randint(1, 6, size=(p, q)) # for find similar a
-theta1 = np.zeros([p,q])
-x = np.random.randn(q, b)
+theta1 = np.random.randint(1, 6, size=(b, q)) # for find similar mtr
+theta2 = np.zeros([b,q])
+x = np.random.randn(p, b)
 
-alpha = 0.000002  # regularization parameter very small because sum of theta1 very big
+alpha = 0.000015  # regularization parameter very small because sum of theta1 very big
 beta = 0.001      # for learning optimization
 num_iter = 300    
 cost = []
@@ -60,17 +60,33 @@ def costFunction(a, theta1, x, alpha):
     j = 0.5*((np.sum(theta1-a)**2) + alpha*np.sum(x**2) + alpha*np.sum(theta1**2)) 
     return j
 
-def gradientDescent(a, theta, x, alpha, beta, num_iter):
+def gradientDescent(a, theta2, alpha, beta, num_iter):
+    u, s, v = np.linalg.svd(a)
+    s1 = np.sqrt(s)
+    s2 = len(u)
+    s3 = np.zeros([s1 s2])
+    
+    for f in range(len(s1)):
+        s3[f-1][f-1] = s1[f-1]
+    s3 = s3[:b, :b]
+    s4 = s2 - len(s3)
+    s5 = np.zeros([s4, s4])
+    s6 = np.concatenate([s3, s5])
+    theta3 = np.matmul(u, s6)
+    
+    s7 = len(v) - len(s3)
+    s8 = np.zeros([s7,s7])
+    s9 = np.concatenate([s3, s8], axis=1)
+    theta4 = np.matmul(s9, v)
+    
     for k in range(num_iter):
-        for i in range(a.shape[0]):          # for all user
-            for l in range(x.shape[1]):      # for different type of movie generes
-                theta1 = theta1 + theta*np.transpose(x[:,l])  
-     
-                x[:,l] = x[:,l] - beta(np.sum(theta1-a)*np.transpose(theta1[i,:]) + alpha*np.sum(x[:,l]))  
-                theta1[i,:] = theta1[i,:] - beta(np.sum(theta1-a)*np.transpose(x[:,l]) + alpha*np.sum(theta1[i,:]))
-        cost.append(costFunction(a, theta1, x, alpha))           
-    return cost, x, theta1
-               
-
-cost, x, theta, theta1  = gradientDescent(a, theta, x, alpha, beta, num_iter)
+        for i in range(theta3.shape[0]):
+            theta2 = theta2 + theta4*np.transpose(theta3[i, :])
+            for l in range(theta4.shape[1]):
+                theta3[i,:] = theta3[i,:] - beta(np.sum(theta3[i,:]*theta2[:,l]-a[i][l])*np.transpose(theta2[:,l]) + alpha*np.sum(theta3[i,:]))
+                theta4[:,l] = theta4[:,l] - beta(np.sum(theta3[i,:]*theta2[:,l]-a[i][l])*np.transpose(theta3[i,:]) + alpha*np.sum(theta4[:,l]))
+        cost.append(CostFunction(a, theta3, theta4, alpha))
+    return cost, theta3, theta4
+                
+cost, theta3, theta4  = gradientDescent(a, theta2, alpha, beta, num_iter)
 
