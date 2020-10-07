@@ -4,10 +4,10 @@ import random
 from sklearn.feature_extraction.text import CountVectorizer # for Convert text to matrix of token counts 
 
 
-df = pd.read_csv("/home/shikha/Downloads/rating.csv")
+df = pd.read_csv("/home/shikha/Desktop/rating.csv")
 df.columns = ['userId', 'MovieId', 'rating', 'timestamp']
 
-df1 = pd.read_csv('/home/shikha/movies5.csv')
+df1 = pd.read_csv('/home/shikha/Desktop/movies5.csv')
 df1.columns = ['movietype', 'movieID', 'one', 'two', 'three', 'four', 'five']  # there is four commas in csv so we give one, two, three, four name and later filter out movietype and movieId in this dataframe
 
 df1 = df1.iloc[:, 0:2] # only movietype and movieID column filterout from dataframe
@@ -29,7 +29,7 @@ n = ['sci', 'fi', 'film', 'noir'] # there if hyphen between sci-fi and film-noir
 for i in n:
     m.remove(i) 
 
-r = ['scifi', 'filmnoir'] # so again append scifi and film-noir
+r = ['scifi', 'filmnoir'] # so again append scifi and filmnoir
 
 m.extend(r)
 print(m)  # finally get all type of movie genres(unique)
@@ -39,54 +39,57 @@ p = max(df.userId)
 q = max(df.MovieId)
 a = np.zeros([p, q])
 b = len(m)
-theta1 = np.random.randint(1, 6, size=(b, q)) # for find similar mtr
-theta2 = np.zeros([b,q])
-x = np.random.randn(p, b)
+theta1 = np.random.randint(1, 6, size=(p, b)) # for find similar matr
+#theta1 = np.random.random(p*b).reshape(p,b)
+theta2 = np.random.random(b*q).reshape(b,q)
+theta22 = np.transpose(theta2)
+userId_unique = df.userId.unique()
+print(theta1.shape)
+print(theta2.shape)
 
-alpha = 0.000015  # regularization parameter very small because sum of theta1 very big
-beta = 0.001      # for learning optimization
-num_iter = 300    
-cost = []
+beta = 0.004      # for learning optimization
+num_iter = 30   
 
 
-for i in range(1, p+1):
-    for j in range(len(df.MovieId)): 
-        if df.userId[j] == i:
-           n = df.MovieId[j]
-           a[i-1][n-1] = df.rating[j]   # get ratings of userId-movieId, size (p*q) matrix
-          
+for i in userId_unique:
+    df3 = df[df['userId'] == i].iloc[:]
+    df3.reset_index(inplace=True)
+    for j in range(len(df3)):
+        n = df3.MovieId[j]
+        a[i-1][n-1] = df.rating[j]   # get ratings of userId-movieId, size (p*q) matrix
 
-def costFunction(a, theta1, x, alpha):
-    j = 0.5*((np.sum(theta1-a)**2) + alpha*np.sum(x**2) + alpha*np.sum(theta1**2)) 
-    return j
+print(a.shape)
 
-def gradientDescent(a, theta2, alpha, beta, num_iter):
-    u, s, v = np.linalg.svd(a)
-    s1 = np.sqrt(s)
-    s2 = len(u)
-    s3 = np.zeros([s1 s2])
-    
-    for f in range(len(s1)):
-        s3[f-1][f-1] = s1[f-1]
-    s3 = s3[:b, :b]
-    s4 = s2 - len(s3)
-    s5 = np.zeros([s4, s4])
-    s6 = np.concatenate([s3, s5])
-    theta3 = np.matmul(u, s6)
-    
-    s7 = len(v) - len(s3)
-    s8 = np.zeros([s7,s7])
-    s9 = np.concatenate([s3, s8], axis=1)
-    theta4 = np.matmul(s9, v)
-    
-    for k in range(num_iter):
-        for i in range(theta3.shape[0]):
-            theta2 = theta2 + theta4*np.transpose(theta3[i, :])
-            for l in range(theta4.shape[1]):
-                theta3[i,:] = theta3[i,:] - beta(np.sum(theta3[i,:]*theta2[:,l]-a[i][l])*np.transpose(theta2[:,l]) + alpha*np.sum(theta3[i,:]))
-                theta4[:,l] = theta4[:,l] - beta(np.sum(theta3[i,:]*theta2[:,l]-a[i][l])*np.transpose(theta3[i,:]) + alpha*np.sum(theta4[:,l]))
-        cost.append(CostFunction(a, theta3, theta4, alpha))
-    return cost, theta3, theta4
-                
-cost, theta3, theta4  = gradientDescent(a, theta2, alpha, beta, num_iter)
 
+def costFunction(a, theta1, theta22):
+    for m in range(len(a)):
+        for u in range(len(a[0])):
+            error = (a[m][u] - np.tranpose(a[m][u] - np.matmul(theta1[m], theta22[u])))*2
+    return error
+
+
+output1 = []
+output2 = []
+
+def SochasticGredientDescent(a, theta1, theta22, theta2, beta):
+    for i in range(num_iter):
+        for m in range(len(theta1)):
+            for k in range(len(theta1[0])):
+                for u in range(len(theta2[0])):
+                    theta1[m][k] = theta1[m][k] + 2*beta*(a[m][u] - np.matmul(theta1[m], theta22[u]))*theta2[k][u]
+        for k in range(len(theta2)):
+            for u in range(len(theta2[0])):
+                for m in range(len(theta1)):
+                    theta2[k][u] = theta2[k][u] - 2*beta*(a[m][u] - np.matmul(theta1[m], theta22[u]))*theta1[m][k]  
+        output1.append(theta1)
+        output2.append(theta2)
+    return output1[-1], output2[-1]
+
+cost1 = SochasticGredientDescent(a, theta1, theta22, theta2, beta)
+
+user_genres = cost1[0]
+genres_movieId = cost1[1]
+
+
+user_movidId_rating = np.matmul(user_genres, genres_movieId)  #finally get how much rating, which user give which movie
+print(user_movieId_rating)
