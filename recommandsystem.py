@@ -4,10 +4,10 @@ import random
 from sklearn.feature_extraction.text import CountVectorizer # for Convert text to matrix of token counts 
 
 
-df = pd.read_csv("/home/shikha/Desktop/rating.csv")
+df = pd.read_csv("rating.csv")
 df.columns = ['userId', 'MovieId', 'rating', 'timestamp']
 
-df1 = pd.read_csv('/home/shikha/Desktop/movies5.csv')
+df1 = pd.read_csv('movies5.csv')
 df1.columns = ['movietype', 'movieID', 'one', 'two', 'three', 'four', 'five']  # there is four commas in csv so we give one, two, three, four name and later filter out movietype and movieId in this dataframe
 
 df1 = df1.iloc[:, 0:2] # only movietype and movieID column filterout from dataframe
