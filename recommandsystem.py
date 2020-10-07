@@ -48,7 +48,7 @@ print(theta1.shape)
 print(theta2.shape)
 
 beta = 0.004      # for learning optimization
-num_iter = 30   
+num_iter = 100   
 
 
 for i in userId_unique:
